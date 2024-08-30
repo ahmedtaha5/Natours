@@ -4,6 +4,19 @@ const handlerFactory = require('./handlerFactory');
 
 //const CatchAsync = require('./../utils/catchAsync');
 
+exports.setTourUserIds = (req, res, next) => {
+  // allow nested routes
+  if (!req.body.tour) req.body.tour = req.params.tourId;
+  if (!req.body.user) req.body.user = req.user.id;
+  // console.log(req.user);
+  next();
+};
+exports.deleteReview = handlerFactory.deleteOne(Review);
+exports.updateReview = handlerFactory.updateOne(Review);
+exports.createReview = handlerFactory.createOne(Review);
+exports.getAllReviews = handlerFactory.getAll(Review);
+exports.getReview = handlerFactory.getOne(Review);
+
 // exports.getAllReviews = CatchAsync(async (req, res, next) => {
 //   // allow nested get review on a tour
 //   let filter = {};
@@ -29,15 +42,3 @@ const handlerFactory = require('./handlerFactory');
 //     }
 //   });
 // });
-exports.setTourUserIds = (req, res, next) => {
-  // allow nested routes
-  if (!req.body.tour) req.body.tour = req.params.tourId;
-  if (!req.body.user) req.body.user = req.user.id;
-  // console.log(req.user);
-  next();
-};
-exports.deleteReview = handlerFactory.deleteOne(Review);
-exports.updateReview = handlerFactory.updateOne(Review);
-exports.createReview = handlerFactory.createOne(Review);
-exports.getAllReviews = handlerFactory.getAll(Review);
-exports.getReview = handlerFactory.getOne(Review);

@@ -1,15 +1,22 @@
 const express = require('express');
-
-const authController = require('./../Controllers/authController');
 const tourController = require('./../Controllers/tourController');
-//const reviewController = require('../Controllers/reviewController');
+const authController = require('./../Controllers/authController');
 const reviewRouter = require('./../Routes/reviewRoutes');
 
 const router = express.Router();
 
+// router.param('id', tourController.checkID);
+
+// POST /tour/234fad4/reviews
+// GET /tour/234fad4/reviews
+
 router.use('/:tourId/reviews', reviewRouter);
 
-router.route('/tour-stats').get(tourController.getAllStats);
+router
+  .route('/top-5-cheap')
+  .get(tourController.aliasTopTours, tourController.getAllTours);
+
+router.route('/tour-stats').get(tourController.getTourStats);
 router
   .route('/monthly-plan/:year')
   .get(
@@ -17,6 +24,15 @@ router
     authController.restrictTo('admin', 'lead-guide', 'guide'),
     tourController.getMonthlyPlan
   );
+
+router
+  .route('/tours-within/:distance/center/:latlng/unit/:unit')
+  .get(tourController.getToursWithin);
+// /tours-within?distance=233&center=-40,45&unit=mi
+// /tours-within/233/center/-40,45/unit/mi
+
+router.route('/distances/:latlng/unit/:unit').get(tourController.getDistances);
+
 router
   .route('/')
   .get(tourController.getAllTours)
@@ -29,30 +45,17 @@ router
 router
   .route('/:id')
   .get(tourController.getTour)
+  .patch(
+    authController.protect,
+    authController.restrictTo('admin', 'lead-guide'),
+    tourController.uploadTourImages,
+    tourController.resizeTourImages,
+    tourController.updateTour
+  )
   .delete(
     authController.protect,
     authController.restrictTo('admin', 'lead-guide'),
     tourController.deleteTour
-  )
-  .patch(
-    authController.protect,
-    authController.restrictTo('admin', 'lead-guide'),
-    tourController.updateTour
   );
 
-router
-  .route('/tours-within/:distance/center/:latlng/unit/:unit')
-  .get(tourController.getTourWithin);
-
-router
-  .route('/get-distances/:latlng/unit/:unit')
-  .get(tourController.getDistances);
-// router
-//   .route('/:tourId/reviews')
-//   .post(
-//     authController.protect,
-//     authController.restrictTo('user'),
-//     reviewController.createReview,
-//   );
-
-module.exports = router; // cause we will import it to the main file app.js
+module.exports = router;

@@ -1,15 +1,26 @@
 const express = require('express');
+const viewController = require('../Controllers/viewController');
+const authController = require('../Controllers/authController');
+const bookingController = require('../Controllers/bookingController');
 
 const router = express.Router();
-const viewsController = require('./../Controllers/viewsController');
 
-router.get('/', (req, res) => {
-  res.status(200).render('base', {
-    tour: 'the forest Hiker',
-    user: 'Ahmed Taha'
-  });
-});
-router.get('/', viewsController.getOverview);
-router.get('/tour/:slug', viewsController.getTour);
+router.get(
+  '/',
+  bookingController.createBookingCheckout,
+  authController.isLoggedIn,
+  viewController.getOverview
+);
+router.get('/tour/:slug', authController.isLoggedIn, viewController.getTour);
+router.get('/login', authController.isLoggedIn, viewController.getLoginForm);
+//router.get('/signup', viewController.getSignupForm);
+router.get('/me', authController.protect, viewController.getAccount);
+router.get('/my-tours', authController.protect, viewController.getMyTours);
+
+router.post(
+  '/submit-user-data',
+  authController.protect,
+  viewController.updateUserData
+);
 
 module.exports = router;

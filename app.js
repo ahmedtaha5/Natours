@@ -1,90 +1,101 @@
 const path = require('path');
 const express = require('express');
+const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
-const morgan = require('morgan'); // npm i morgan
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
+const cookieParser = require('cookie-parser');
 
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./Controllers/errorController');
-
-const tourRouters = require('./Routes/tourRoutes');
-const userRouters = require('./Routes/userRoutes');
-const reviewRouters = require('./Routes/reviewRoutes');
-const viewsRouters = require('./Routes/viewsRoutes');
+const tourRouter = require('./Routes/tourRoutes');
+const userRouter = require('./Routes/userRoutes');
+const reviewRouter = require('./Routes/reviewRoutes');
+const bookingRouter = require('./Routes/bookingRoutes');
+const viewRouter = require('./Routes/viewsRoutes');
 
 const app = express();
 
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
 
-// 1) Global MIDDLEWARES
+// 1) GLOBAL MIDDLEWARES
 // Serving static files
-app.use(express.static(path.join(__dirname, '/public')));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// set security HTTP headers
+// Set security HTTP headers
 app.use(helmet());
-//Development Logging
+
+// Development logging
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
-//limit requests from the same API
+
+// Limit requests from same API
 const limiter = rateLimit({
   max: 100,
-  windowMs: 60 * 60 * 1000, // 1 hour
-  message: 'too many requests from this IP, please try again in an hour!'
+  windowMs: 60 * 60 * 1000,
+  message: 'Too many requests from this IP, please try again in an hour!'
 });
 app.use('/api', limiter);
 
-// body Parser , reading the data from the body into req.body
-app.use(express.json());
+// Body parser, reading data from body into req.body
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(cookieParser());
 
-// Data sanitization against NoSQL injection
-app.use(mongoSanitize()); // { "$gt": "" }
-// Data sanitization against xss
+// Data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
+// Data sanitization against XSS
 app.use(xss());
 
-// prevent parameter pollution
+// Prevent parameter pollution
 app.use(
   hpp({
     whitelist: [
       'duration',
-      'maxGroupSize',
-      'price',
-      'ratingsAverage',
       'ratingsQuantity',
-      'difficulty'
+      'ratingsAverage',
+      'maxGroupSize',
+      'difficulty',
+      'price'
     ]
   })
 );
 
+// Test middleware
 app.use((req, res, next) => {
-  // console.log(req.headers);
-  req.requestedTime = new Date().toISOString();
+  req.requestTime = new Date().toISOString();
+  //console.log(req.cookies);
   next();
 });
-app.use('/', viewsRouters);
-app.use('/api/v1/tours', tourRouters);
-app.use('/api/v1/users', userRouters);
-app.use('/api/v1/reviews', reviewRouters);
 
-// لازم بنفس الترتيب ده . ليه ؟
+// 3) ROUTES
+app.use('/', viewRouter);
+app.use('/api/v1/tours', tourRouter);
+app.use('/api/v1/users', userRouter);
+app.use('/api/v1/reviews', reviewRouter);
+app.use('/api/v1/bookings', bookingRouter);
 
-//في اول سطر  app.all() عشان لو كتبنا
-
-// هيقراها هي الاول
-
-//fail وكده كل مره هيبقى
-
-app.all('*', function(req, res, next) {
-  //console.log(err.stack);
-  next(new AppError(`can't find ${req.originalUrl} on this server`, 404));
+app.all('*', (req, res, next) => {
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
 app.use(globalErrorHandler);
 
 module.exports = app;
 
-//comment from ahmed taha at 19-8
+// app.all('*', (req, res, next) => {
+//   // res.status(404).json({
+//   //   status: 'fail',
+//   //   message: `Can't find ${req.originalUrl} on this server `,
+//   // // });
+//   // const err = new Error(`Can't find ${req.originalUrl} on this server! `);
+//   // err.statusCode = 404;
+//   // err.status = 'fail';
+
+//   next(new AppError(`Can't find ${req.originalUrl} on this server! `), 404);
+// });

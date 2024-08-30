@@ -1,40 +1,40 @@
-const CatchAsync = require('./../utils/catchAsync');
+const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
-const ApiFeatures = require('./../utils/apiFeature');
+const APIFeatures = require('./../utils/apiFeature');
 
 exports.deleteOne = Model =>
-  CatchAsync(async (req, res, next) => {
+  catchAsync(async (req, res, next) => {
     const doc = await Model.findByIdAndDelete(req.params.id);
     if (!doc) {
-      return next(new AppError('can not find a document with this id', 404));
+      // NULL is a fallcy value which will produce false
+      return next(new AppError('No document found with that id!', 404));
     }
     res.status(204).json({
-      //(204)  kind of standars //
       status: 'success',
       data: null
     });
   });
 
 exports.updateOne = Model =>
-  CatchAsync(async (req, res, next) => {
+  catchAsync(async (req, res, next) => {
     const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true
     });
     if (!doc) {
-      return next(new AppError('can not find document with this id', 404));
+      // NULL is a fallcy value which will produce false
+      return next(new AppError('No document found with that id!', 404));
     }
     res.status(200).json({
       status: 'success',
-      data: {
-        data: doc
-      }
+      data: { doc }
     });
   });
 
 exports.createOne = Model =>
-  CatchAsync(async (req, res, next) => {
+  catchAsync(async (req, res, next) => {
     const doc = await Model.create(req.body);
+
     res.status(201).json({
       status: 'success',
       data: {
@@ -43,33 +43,8 @@ exports.createOne = Model =>
     });
   });
 
-exports.getAll = Model =>
-  CatchAsync(async (req, res, next) => {
-    // to allow for nested get reviews on tour
-    let filter = {};
-    if (req.params.tourId) filter = { tour: req.params.tourId };
-    console.log(req.params.tourId);
-
-    const features = new ApiFeatures(Model.find(filter), req.query)
-      .Filter()
-      .sort()
-      .fields()
-      .pagination();
-    //const doc = await features.query.explain();
-    const doc = await features.query;
-
-    //Sending response
-    res.status(200).json({
-      status: 'success',
-      results: doc.length,
-      data: {
-        data: doc
-      }
-    });
-  });
-
 exports.getOne = (Model, popOptions) =>
-  CatchAsync(async (req, res, next) => {
+  catchAsync(async (req, res, next) => {
     let query = Model.findById(req.params.id);
     if (popOptions) query = query.populate('review');
     const doc = await query;
@@ -84,8 +59,31 @@ exports.getOne = (Model, popOptions) =>
       }
     });
   });
-exports.setTourUserIds = (req, res, next) => {
-  if (!req.body.tour) req.body.tour = req.params.tourId;
-  if (!req.body.user) req.body.user = req.user.id;
-  next();
-};
+
+exports.getAll = Model =>
+  catchAsync(async (req, res, next) => {
+    // To allow nested GET reviews (hack)
+    let filter = {};
+    if (req.params.tourId) filter = { tour: req.params.tourId };
+
+    // Apply query features: filter, sort, limitFields, paginate
+    const features = new APIFeatures(Model.find(filter), req.query)
+      .filter()
+      .sort()
+      .fields()
+      .pagination();
+
+    const doc = await features.query;
+
+    // Check if doc is found
+    if (!doc) {
+      return next(new AppError('No document found with that ID', 404));
+    }
+
+    // SEND RESPONSE
+    res.status(200).json({
+      status: 'success',
+      results: doc.length,
+      data: { data: doc } // corrected data structure to be more RESTful
+    });
+  });

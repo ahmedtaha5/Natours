@@ -4,19 +4,18 @@ class ApiFeatures {
     this.queryString = queryString;
   }
 
-  Filter() {
+  filter() {
     const queryObj = { ...this.queryString }; // Copying the query string
     const excludedFields = ['page', 'sort', 'limit', 'fields']; // Fields to exclude from the query
 
     // Loop through excludedFields array and delete corresponding properties from queryObj
-    excludedFields.forEach(el => delete queryObj[el]); //important
+    excludedFields.forEach(el => delete queryObj[el]);
 
     // Advanced filtering: convert queryObj to string and replace certain words with MongoDB operators
     let queryStr = JSON.stringify(queryObj);
-    queryStr = queryStr.replace(/\b(gt|gte|lt|lte)\b/g, match => `$${match}`); //  \b for matching word boundaries, g to perform global match
-    // Find documents in the database matching the modified query and assign it to this.query
+    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, match => `$${match}`); // \b for matching word boundaries, g to perform global match
+
     this.query = this.query.find(JSON.parse(queryStr));
-    // Return the current object instance to enable chaining methods
     return this;
   }
 
