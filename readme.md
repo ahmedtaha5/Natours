@@ -9,7 +9,7 @@ Natours is a comprehensive tour booking platform built using modern technologies
 - **Streamlined Booking Process**: Integrated with Stripe for secure payments.
 - **User Profiles**: Personalized profiles for managing bookings and updating profile details.
 - **Interactive Tour Descriptions**: Includes reviews, ratings, and dynamic tour maps.
-- **Security**: Implemented JWT authentication, data sanitization, and best practices in deployment on Render.
+- **Security**: Implemented JWT authentication, data sanitization, and best practices in deployment on vercel.
 
 ## Technologies Used
 
@@ -18,4 +18,4 @@ Natours is a comprehensive tour booking platform built using modern technologies
 - **MongoDB**
 - **Mongoose**
 - **Stripe**
-- **Render** for deployment
+- **vercel* for deployment
