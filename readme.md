@@ -18,4 +18,4 @@ Natours is a comprehensive tour booking platform built using modern technologies
 - **MongoDB**
 - **Mongoose**
 - **Stripe**
-- **vercel* for deployment
+- **vercel** for deployment
